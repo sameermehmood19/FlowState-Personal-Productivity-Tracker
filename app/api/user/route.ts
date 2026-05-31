@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
       { message: "Account created successfully", userId: user.id },
       { status: 201 }
     );
-  } catch {
+  } catch (err) {
+    console.error("User registration API error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

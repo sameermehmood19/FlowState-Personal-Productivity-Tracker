@@ -885,5 +885,13 @@ body {
   position: relative;
 }
 
-/* If user adds bg.jpg to public folder later, we can add a specific class or let them override auth-bg */
+/* Perfect responsive margin/padding inside auth forms */
+.auth-card {
+  padding: 2rem 1.75rem !important; /* Balanced padding for mobile */
+}
 
+@media (min-width: 640px) {
+  .auth-card {
+    padding: 2.5rem !important; /* Generous 40px padding on desktop */
+  }
+}
