@@ -1,0 +1,159 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  name                String
+  email               String               @unique
+  password            String
+  weeklyGoal          Float                @default(40)
+  dailyGoal           Float                @default(8)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  logs                DailyLog[]
+  insights            Insight[]
+  stats               ProductivityStats[]
+  projectValidations  ProjectValidation[]
+  learningProfile     LearningProfile?
+  aiCaches            AICache[]
+}
+
+// ─── AI Cache ─────────────────────────────────────────────────────────────────
+
+model AICache {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "advisor" | "alerts"
+  content     String   // JSON string of the cached response
+  generatedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId, type])
+}
+
+model DailyLog {
+  id                String   @id @default(cuid())
+  userId            String
+  date              DateTime
+  studyHours        Float
+  moodScore         Int
+  focusScore        Int
+  sleepHours        Float
+  exerciseCompleted Boolean  @default(false)
+  distractionHours  Float    @default(0)
+  notes             String?
+  productivityScore Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model Insight {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  category  String
+  message   String
+  date      DateTime @default(now())
+  read      Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+model ProductivityStats {
+  id               String   @id @default(cuid())
+  userId           String
+  weekStart        DateTime
+  avgStudyHours    Float    @default(0)
+  avgMoodScore     Float    @default(0)
+  avgFocusScore    Float    @default(0)
+  avgSleepHours    Float    @default(0)
+  totalStudyHours  Float    @default(0)
+  consistencyScore Float    @default(0)
+  daysLogged       Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart])
+}
+
+// ─── Project Architect ───────────────────────────────────────────────────────
+
+model ProjectValidation {
+  id               String   @id @default(cuid())
+  userId           String
+
+  // User input
+  projectName      String
+  description      String
+  problemStatement String
+  targetUsers      String
+  teamSize         String
+  timeline         String
+  scalabilityGoal  String
+  budget           String
+  architecture     String
+  methodology      String
+  proposedStack    String   // JSON string
+
+  // AI output
+  verdict          String   @default("pending") // "approved" | "revision" | "rejected" | "pending"
+  overallScore     Float    @default(0)
+  scoreBreakdown   String   @default("{}") // JSON string
+  aiFeedback       String   @default("{}") // Full AI JSON response
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ─── Learning Coach ──────────────────────────────────────────────────────────
+
+model LearningProfile {
+  id           String          @id @default(cuid())
+  userId       String          @unique
+  careerGoal   String
+  currentLevel String          // JSON: { javascript: 3, python: 1, ... }
+  weeklyHours  Int             @default(10)
+  roadmap      String          @default("{}") // Full AI roadmap JSON
+  generatedAt  DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topics       LearningTopic[]
+}
+
+model LearningTopic {
+  id          String          @id @default(cuid())
+  profileId   String
+  title       String
+  category    String
+  orderIndex  Int
+  status      String          @default("pending") // "pending" | "in_progress" | "completed"
+  weekTarget  Int
+  whyNow      String          @default("")
+  milestone   String          @default("")
+  resources   String          @default("[]") // JSON array
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  profile     LearningProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, orderIndex])
+}
